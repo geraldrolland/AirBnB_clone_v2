@@ -3,13 +3,14 @@
 from models.base_model import BaseModel, Base
 from sqlalchemy import Column, Integer, String
 from sqlachemy.orm import relationship
-from models.city import City
 import os
+
+
 class State(BaseModel, Base):
     """ State class """
     __tablename__ = "states"
     name = Column(String(128), nullable=False)
-    cities = relationship("City", cascade="all, delete", backref="state")
+    cities = relationship("City", cascade="all, delete-orphan", backref="state")
 
     @property
     def cities(self):
