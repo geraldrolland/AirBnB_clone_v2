@@ -73,7 +73,7 @@ class HBNBCommand(cmd.Cmd):
                 pline = pline[2].strip()  # pline is now str
                 if pline:
                     # check for *args or **kwargs
-                    if pline[0] is '{' and pline[-1] is'}'\
+                    if pline[0] == '{' and pline[-1] == '}'\
                             and type(eval(pline)) is dict:
                         _args = pline
                     else:
@@ -115,15 +115,22 @@ class HBNBCommand(cmd.Cmd):
 
     def do_create(self, args):
         """ Create an object of any class"""
-        if not args:
+        args = args.partition(" ")
+        args = list(args)
+        if not args[0]:
             print("** class name missing **")
             return
-        elif args not in HBNBCommand.classes:
+        elif args[0] not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
-        new_instance = HBNBCommand.classes[args]()
-        storage.save()
+        storage.reload()
+        class_name = args[0]
+        args = args[1:]
+        new_instance = HBNBCommand.classes[class_name]()
+        HBNBCommand.attribute_initializer(new_instance, args)
+        #print(new_instance.__dict__)
         print(new_instance.id)
+        storage.new(new_instance)
         storage.save()
 
     def help_create(self):
@@ -187,8 +194,7 @@ class HBNBCommand(cmd.Cmd):
         key = c_name + "." + c_id
 
         try:
-            del(storage.all()[key])
-            storage.save()
+            del storage.all()[key]
         except KeyError:
             print("** no instance found **")
 
@@ -200,21 +206,23 @@ class HBNBCommand(cmd.Cmd):
     def do_all(self, args):
         """ Shows all objects, or all objects of a class"""
         print_list = []
-
+      
+        storage.reload()
         if args:
             args = args.split(' ')[0]  # remove possible trailing args
             if args not in HBNBCommand.classes:
                 print("** class doesn't exist **")
                 return
-            for k, v in storage._FileStorage__objects.items():
+            for k, v in storage.all().items():
                 if k.split('.')[0] == args:
-                    print_list.append(str(v))
+                    print_list.append(v.__str__())
         else:
-            for k, v in storage._FileStorage__objects.items():
-                print_list.append(str(v))
+            for k, v in storage.all().items():
+                print_list.append(v.__str__())
 
         print(print_list)
-
+       
+       
     def help_all(self):
         """ Help information for the all command """
         print("Shows all objects, or all of a class")
@@ -272,7 +280,7 @@ class HBNBCommand(cmd.Cmd):
                 args.append(v)
         else:  # isolate args
             args = args[2]
-            if args and args[0] is '\"':  # check for quoted arg
+            if args == '\"' and args[0] == '\"':  # check for quoted arg
                 second_quote = args.find('\"', 1)
                 att_name = args[1:second_quote]
                 args = args[second_quote + 1:]
@@ -280,10 +288,10 @@ class HBNBCommand(cmd.Cmd):
             args = args.partition(' ')
 
             # if att_name was not quoted arg
-            if not att_name and args[0] is not ' ':
+            if not att_name and args[0] != ' ':
                 att_name = args[0]
             # check for quoted val arg
-            if args[2] and args[2][0] is '\"':
+            if args[2] == '\"' and args[2][0] == '\"':
                 att_val = args[2][1:args[2].find('\"', 1)]
 
             # if att_val was not quoted arg
@@ -314,6 +322,39 @@ class HBNBCommand(cmd.Cmd):
                 new_dict.__dict__.update({att_name: att_val})
 
         new_dict.save()  # save updates to file
+
+    @staticmethod
+    def attribute_initializer(obj, args):
+        string = args[1]
+        attr_list = string.split()
+        for attr in attr_list:
+            attr = attr.split("=")
+            setattr(obj, attr[0], HBNBCommand.create_str(attr[1]))
+
+    @staticmethod
+    def create_str(string):
+        str_len = len(string)
+        str_copy = ''
+        index = 0
+        while index < str_len:
+            if (string[index] == '"' or string[index] == "'"  ) and (index == 0 or index == str_len - 1):
+                index += 1
+                continue
+            str_copy += string[index]
+            index += 1
+        if "_" in str_copy:
+            str_copy = str_copy.replace("_", " ")
+            return str_copy
+        if str_copy[0] != '0':
+            if str_copy.isdigit():
+                str_copy = int(str_copy)
+                return str_copy
+            try:
+                str_copy = float(str_copy)
+                return str_copy
+            except Exception as e:
+                return str_copy
+        return str_copy
 
     def help_update(self):
         """ Help information for the update class """
