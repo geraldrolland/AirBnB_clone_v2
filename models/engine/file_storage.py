@@ -10,12 +10,19 @@ class FileStorage:
 
     def all(self, cls=None):
         """Returns a dictionary of models currently in storage"""
-        if cls is not None:
-            obj_list = []
-            for obj in FileStorage.__objects.values():
-                if obj.__class__.__name__ == cls.__name__:
-                    obj_list.append(obj)
-            return obj_list
+        if cls is None:
+            return FileStorage.__objects
+        class_obj_dict = {}
+        all_obj_dict = FileStorage.__objects
+        class_name = cls.__name__
+        all_obj_keys = all_obj_dict.keys()
+        for key in all_obj_keys:
+            obj_class = key.split(".")
+            obj_class=obj_class[0]
+            if obj_class == class_name:
+                class_obj_dict.update({key: all_obj_dict[key]})
+            continue
+        return class_obj_dict
 
     def new(self, obj):
         """Adds new object to storage dictionary"""
@@ -27,18 +34,16 @@ class FileStorage:
             temp = {}
             temp.update(FileStorage.__objects)
             for key, val in temp.items():
-                temp[key] = val.to_dict()
+                _sa = "_sa_instance_" + val.__class__.__name__.lower()
+                val = val.to_dict()
+                try:
+                    del val[_sa]
+                    temp[key] = val
+                    #json.dump(temp, f)
+                except KeyError as e:
+                    pass
+            #print(temp)
             json.dump(temp, f)
-
-    def delete(self, obj=None):
-        if obj is not None:
-            obj_key = obj.__class__.__name__ + "." + str(obj.id)
-            try:
-                del FileStorage.__objects[obj_key]
-                return
-            except KeyError as e:
-                return
-                       
 
     def reload(self):
         """Loads storage dictionary from file"""
@@ -58,8 +63,20 @@ class FileStorage:
         try:
             temp = {}
             with open(FileStorage.__file_path, 'r') as f:
+                pass
                 temp = json.load(f)
                 for key, val in temp.items():
                         self.all()[key] = classes[val['__class__']](**val)
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             pass
+
+    def delete(self, obj=None):
+        """ delete obj from __objects if it’s inside"""
+        if obj is not None:
+            obj_dict = self.all()
+            obj_keys = obj_dict.keys()
+            for key in obj_keys:
+                if obj_dict[key] == obj:
+                    del obj_dict[key]
+                    break
+
