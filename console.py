@@ -123,13 +123,15 @@ class HBNBCommand(cmd.Cmd):
         elif args[0] not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
-        storage.reload()
         class_name = args[0]
         args = args[1:]
         new_instance = HBNBCommand.classes[class_name]()
         HBNBCommand.attribute_initializer(new_instance, args)
-        #print(new_instance.__dict__)
         print(new_instance.id)
+        try:
+            new_instance.__delattr__("_sa_instance_state")
+        except KeyError as e:
+            pass
         storage.new(new_instance)
         storage.save()
 
@@ -215,11 +217,12 @@ class HBNBCommand(cmd.Cmd):
                 return
             for k, v in storage.all().items():
                 if k.split('.')[0] == args:
+                    v.__delattr__("_sa_instance_state")
                     print_list.append(v.__str__())
         else:
             for k, v in storage.all().items():
+                v.__delattr__("_sa_instance_state")
                 print_list.append(v.__str__())
-
         print(print_list)
        
        

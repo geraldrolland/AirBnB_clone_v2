@@ -34,15 +34,7 @@ class FileStorage:
             temp = {}
             temp.update(FileStorage.__objects)
             for key, val in temp.items():
-                _sa = "_sa_instance_" + val.__class__.__name__.lower()
-                val = val.to_dict()
-                try:
-                    del val[_sa]
-                    temp[key] = val
-                    #json.dump(temp, f)
-                except KeyError as e:
-                    pass
-            #print(temp)
+                temp.update({key : val.to_dict()})
             json.dump(temp, f)
 
     def reload(self):
@@ -61,22 +53,22 @@ class FileStorage:
                     'Review': Review
                   }
         try:
-            temp = {}
-            with open(FileStorage.__file_path, 'r') as f:
-                pass
-                temp = json.load(f)
-                for key, val in temp.items():
-                        self.all()[key] = classes[val['__class__']](**val)
+            with open(FileStorage.__file_path, "r", encoding="UTF8") as file:
+                all_obj_dict = json.load(file)
+                for obj_dict in all_obj_dict.values():
+                    class_name = obj_dict["__class__"]
+                    del obj_dict["__class__"]
+                    self.new(eval(class_name)(**obj_dict))
         except FileNotFoundError as e:
             pass
 
     def delete(self, obj=None):
         """ delete obj from __objects if it’s inside"""
         if obj is not None:
-            obj_dict = self.all()
-            obj_keys = obj_dict.keys()
-            for key in obj_keys:
-                if obj_dict[key] == obj:
-                    del obj_dict[key]
-                    break
+            all_obj_dict = FileStorage.__objects
+            try:
+                key = obj.__class__.__name__ + "." + str(obj.id)
+                del all_obj_dict[key]
+            except KeyError as e:
+                pass
 

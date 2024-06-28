@@ -23,9 +23,11 @@ class BaseModel:
         else:
             kwargs['updated_at'] = datetime.strptime(kwargs['updated_at'],
                                                      '%Y-%m-%dT%H:%M:%S.%f')
-            kwargs['created_at'] = datetime.strptime(kwargs['created_at'],
-                                                     '%Y-%m-%dT%H:%M:%S.%f')
-            del kwargs['__class__']
+            kwargs['created_at'] = datetime.strptime(kwargs['created_at'], '%Y-%m-%dT%H:%M:%S.%f')
+            try:
+                del kwargs['__class__']
+            except KeyError as e:
+                pass
             self.__dict__.update(kwargs)
 
     def __str__(self):
@@ -52,8 +54,7 @@ class BaseModel:
         dictionary['created_at'] = self.created_at.isoformat()
         dictionary['updated_at'] = self.updated_at.isoformat()
         try:
-            del dictionary[_sa_instance_state]
+            del dictionary["_sa_instance_state"]
         except KeyError as e:
             pass
-        finally:
-            return dictionary
+        return dictionary
