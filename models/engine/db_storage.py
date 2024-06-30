@@ -27,9 +27,9 @@ class DBStorage:
             ),
             pool_pre_ping=True
         )
-    metadata = MetaData()
-    metadata.reflect(bind=engine)
-    metadata.drop_all(bind=engine)
+        metadata = MetaData()
+        metadata.reflect(bind=self.__engine)
+        metadata.drop_all(bind=self.__engine)
 
     def all(self, cls=None):
         Session = sessionmaker(bind=self.__engine)
@@ -53,7 +53,7 @@ class DBStorage:
     def new(self, obj):
         Session = sessionmaker(bind=self.__engine)
         self.__session = Session()
-        self._session.add(obj)
+        self.__session.add(obj)
 
     def save(self):
         self.__session.commit()

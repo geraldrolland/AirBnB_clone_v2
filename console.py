@@ -128,10 +128,7 @@ class HBNBCommand(cmd.Cmd):
         new_instance = HBNBCommand.classes[class_name]()
         HBNBCommand.attribute_initializer(new_instance, args)
         print(new_instance.id)
-        try:
-            new_instance.__delattr__("_sa_instance_state")
-        except KeyError as e:
-            pass
+        storage.reload()
         storage.new(new_instance)
         storage.save()
 
