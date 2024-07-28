@@ -74,3 +74,6 @@ class DBStorage:
         self.__session = Session()
         Base.metadata.create_all(bind=self.__engine)
         self.__session.close()
+
+    def close(self):
+        self.__session.remove()
